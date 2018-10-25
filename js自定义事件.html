@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>自定义事件</title>
+</head>
+
+<body>
+  <script type="text/javascript">
+    /**
+     * Created by taozh on 2017/6/22.
+     * taozh1982@gmail.com
+     */
+    var EventEmitter = function() {
+      this.__z_e_listeners = {};
+    };
+    EventEmitter.prototype.on = function(evt, handler, context) {
+      var handlers = this.__z_e_listeners[evt];
+      if (handlers === undefined) {
+        handlers = [];
+        this.__z_e_listeners[evt] = handlers;
+      }
+      var item = {
+        handler: handler,
+        context: context
+      };
+      handlers.push(item);
+      return item;
+    };
+    EventEmitter.prototype.off = function(evt, handler, context) {
+      var handlers = this.__z_e_listeners[evt];
+      if (handlers !== undefined) {
+        var size = handlers.length;
+        for (var i = 0; i < size; i++) {
+          var item = handlers[i];
+          if (item.handler === handler && item.context === context) {
+            handlers.splice(i, 1);
+            return;
+          }
+        }
+      }
+    };
+    EventEmitter.prototype.emit = function(type, event) {
+      var hanlders = this.__z_e_listeners[type];
+      if (hanlders !== undefined) {
+        var size = hanlders.length;
+        for (var i = 0; i < size; i++) {
+          var ef = hanlders[i];
+          var handler = ef.handler;
+          var context = ef.context;
+          handler.apply(context, [event]);
+        }
+      }
+    };
+  </script>
+  <script>
+    var zObj = function() {
+      this._props = {};
+      this._emitter = new EventEmitter();
+    };
+    zObj.prototype.set = function(key, value) {
+      var old = this._props[key];
+      if (old !== value) {
+        this._props[key] = value;
+        this.emitChange(key, value, old);
+      }
+    };
+    zObj.prototype.get = function(key) {
+      return this._props[key];
+    };
+
+    zObj.prototype.onChange = function(handler, context) {
+      this._emitter.on("change", handler, context);
+    };
+    zObj.prototype.offChange = function(handler, context) {
+      this._emitter.off("change", handler, context);
+    };
+    zObj.prototype.emitChange = function(p, nv, ov) {
+      this._emitter.emit("change", {
+        source: this,
+        property: p,
+        newValue: nv,
+        oldValue: ov
+      });
+    };
+
+    var obj = new zObj();
+    obj.onChange(function(evt) {
+      console.log(evt)
+    });
+    obj.set("id", 1);
+    obj.set("id", 2);
+  </script>
+</body>
+
+</html>
